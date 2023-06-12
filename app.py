@@ -55,7 +55,7 @@ def get_bidi_text(text):
 # Function to show the instructions
 def show_instructions():
     screen.fill(BG_COLOR)
-    text = get_bidi_text(language_messages[LANGUAGE]["start"])
+    text = get_bidi_text(messages[LANGUAGE]["start"])
     draw_text(text, font, (0, 0, 0), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
     pygame.display.flip()
 
@@ -96,9 +96,9 @@ def get_coordination():
     inter_text_x = inter_button_rect.centerx
     inter_text_y = inter_button_rect.centery
 
-    draw_text(get_bidi_text(language_messages[LANGUAGE]["inter"]), font, TEXT_COLOR, inter_text_x, inter_text_y)
-    draw_text(get_bidi_text(language_messages[LANGUAGE]["anti"]), font, TEXT_COLOR, anti_text_x, anti_text_y)
-    draw_text(get_bidi_text(language_messages[LANGUAGE]["inphase"]), font, TEXT_COLOR, inphase_text_x, inphase_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["inter"]), font, TEXT_COLOR, inter_text_x, inter_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["anti"]), font, TEXT_COLOR, anti_text_x, anti_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["inphase"]), font, TEXT_COLOR, inphase_text_x, inphase_text_y)
 
 
     pygame.display.flip()
@@ -147,8 +147,8 @@ def get_stimulus_type():
     aud_text_x = aud_button_rect.centerx
     aud_text_y = aud_button_rect.centery
 
-    draw_text(get_bidi_text(language_messages[LANGUAGE]["aud_stimulus"]), font, TEXT_COLOR, aud_text_x, aud_text_y)
-    draw_text(get_bidi_text(language_messages[LANGUAGE]["vis_stimulus"]), font, TEXT_COLOR, vis_text_x, vis_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["aud_stimulus"]), font, TEXT_COLOR, aud_text_x, aud_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["vis_stimulus"]), font, TEXT_COLOR, vis_text_x, vis_text_y)
 
 
     pygame.display.flip()
@@ -176,7 +176,7 @@ def run_trial(coordination, stimulus):
     start_time = time.time()
 
     counter = 0
-    while time.time() - start_time < MAX_PHASE_DURATION:
+    while time.time() - start_time < MAX_DURATION:
         if counter >= STIMULUS_REPETITION:
             break
         counter += 1
@@ -193,7 +193,7 @@ def run_trial(coordination, stimulus):
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(INPHASE_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 draw_square(SCREEN_WIDTH / 2 - (centimeter_to_pixel(5) + centimeter_to_pixel(2.5)), 
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
@@ -206,7 +206,7 @@ def run_trial(coordination, stimulus):
                 play_sound("500hz.wav")
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(INPHASE_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 play_sound("4000hz.wav")
                 left_stimuli_time = time.time()
@@ -220,7 +220,7 @@ def run_trial(coordination, stimulus):
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(ANTI_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 draw_square(SCREEN_WIDTH / 2 - (centimeter_to_pixel(5) + centimeter_to_pixel(2.5)), 
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
@@ -233,7 +233,7 @@ def run_trial(coordination, stimulus):
                 play_sound("500hz.wav")
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(ANTI_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 play_sound("4000hz.wav")
                 left_stimuli_time = time.time()
@@ -247,7 +247,7 @@ def run_trial(coordination, stimulus):
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(INTER_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 draw_square(SCREEN_WIDTH / 2 - (centimeter_to_pixel(5) + centimeter_to_pixel(2.5)), 
                             SCREEN_HEIGHT / 2 - centimeter_to_pixel(1.25))
@@ -260,7 +260,7 @@ def run_trial(coordination, stimulus):
                 play_sound("500hz.wav")
                 right_stimuli_time = time.time()
 
-                pygame.time.delay(INTER_DELAY)
+                pygame.time.delay(STIMULI_DELAY[coordination])
 
                 play_sound("4000hz.wav")
                 left_stimuli_time = time.time()
