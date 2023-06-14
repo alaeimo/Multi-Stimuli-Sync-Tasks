@@ -1,6 +1,7 @@
 
 import pandas as pd
 from dataclasses import dataclass, field
+from screeninfo import get_monitors
 
 @dataclass 
 class TimeStamp:
@@ -52,3 +53,22 @@ class Trial:
 
 
 
+def get_screen_dpi():
+    monitor = get_monitors()[0]
+    screen_width, screen_height = monitor.width, monitor.height
+    physical_width, physical_height = monitor.width_mm / 25.4, monitor.height_mm / 25.4
+    dpi_x = screen_width / physical_width
+    dpi_y = screen_height / physical_height
+    return dpi_x, dpi_y
+
+def centimeter_to_pixel_x(centimeters):
+    inches = centimeters / 2.54
+    dpi_x, _ = get_screen_dpi()
+    pixels = inches * dpi_x
+    return int(pixels)
+
+def centimeter_to_pixel_y(centimeters):
+    inches = centimeters / 2.54
+    _, dpi_y = get_screen_dpi()
+    pixels = inches * dpi_y
+    return int(pixels)
