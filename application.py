@@ -29,8 +29,12 @@ def draw_square(x, y, color):
 
 # Function to play a sound
 def play_sound(sound_file):
+    pygame.mixer.init()
+    sound = pygame.mixer.Sound(sound_file)
+    duration = sound.get_length()
     pygame.mixer.music.load(sound_file)
     pygame.mixer.music.play()
+    return duration
 
 def get_bidi_text(text):
     reshaped_text = arabic_reshaper.reshape(text)
@@ -108,15 +112,15 @@ def get_coordination(test):
     pygame.draw.rect(screen, BUTTON_COLOR, inter_button_rect, border_radius=corner_radius)
 
     # Calculate text position
-    inphase_text_x = inphase_button_rect.centerx
-    inphase_text_y = inphase_button_rect.centery
     anti_text_x = anti_button_rect.centerx
     anti_text_y = anti_button_rect.centery
     inter_text_x = inter_button_rect.centerx
     inter_text_y = inter_button_rect.centery
+    inphase_text_x = inphase_button_rect.centerx
+    inphase_text_y = inphase_button_rect.centery
 
-    draw_text(get_bidi_text(messages[LANGUAGE]["inter"]), btn_font, TEXT_COLOR, inter_text_x, inter_text_y)
     draw_text(get_bidi_text(messages[LANGUAGE]["anti"]), btn_font, TEXT_COLOR, anti_text_x, anti_text_y)
+    draw_text(get_bidi_text(messages[LANGUAGE]["inter"]), btn_font, TEXT_COLOR, inter_text_x, inter_text_y)
     draw_text(get_bidi_text(messages[LANGUAGE]["inphase"]), btn_font, TEXT_COLOR, inphase_text_x, inphase_text_y)
     pygame.time.delay(500)
     pygame.display.flip()
@@ -135,13 +139,13 @@ def get_coordination(test):
                 if event.key == pygame.K_RCTRL:
                     return "INPHASE"
                 if event.key == pygame.K_SPACE:
-                    return "ANTI"
-                if event.key == pygame.K_LCTRL:
                     return "INTER"
+                if event.key == pygame.K_LCTRL:
+                    return "ANTI"
                 if event.key == pygame.K_ESCAPE:
                     return "Exit"
 
-def get_stimulus_type(test):
+def get_stimulus_type(test, vis_block_count, aud_block_count):
     if test: return random.choice(["VIS", "AUD"])
     screen.fill(BG_COLOR)
     draw_text("x", font, (0, 255, 0), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -169,7 +173,10 @@ def get_stimulus_type(test):
     aud_text_y = aud_button_rect.centery
 
     draw_text(get_bidi_text(messages[LANGUAGE]["aud_stimulus"]), btn_font, TEXT_COLOR, aud_text_x, aud_text_y)
+    draw_text(f"{aud_block_count}/{NUMBER_OF_BLOCKS}", btn_font, TEXT_COLOR, aud_text_x, aud_text_y + button_height)
+
     draw_text(get_bidi_text(messages[LANGUAGE]["vis_stimulus"]), btn_font, TEXT_COLOR, vis_text_x, vis_text_y)
+    draw_text(f"{vis_block_count}/{NUMBER_OF_BLOCKS}", btn_font, TEXT_COLOR, vis_text_x, vis_text_y + button_height)
 
     pygame.time.delay(500)
     pygame.display.flip()
@@ -195,58 +202,75 @@ def display_stimuli(trial:Trial, start_time: float):
     counter = 0
     stimuli_finished = threading.Event()
     # Display the green cross in the middle
+    screen.fill(BG_COLOR)
+    pygame.display.flip()
+    pygame.time.delay(1000)
+
     while not stimuli_finished.is_set():
-        if time.time() - start_time >= trial.max_duration:
+        dispaly_start_time = time.time()
+        screen.fill(BG_COLOR)
+        pygame.display.flip()
+
+        if time.time() - start_time >= trial.block_duration + 1:
             stimuli_finished.set()
             trial.stop = True
             break
-        if counter >= trial.stimulus_repetition:
+        if counter >= trial.stimuli_repetition_in_block:
             stimuli_finished.set()
             break
-
-        screen.fill(BG_COLOR)
-        pygame.display.flip()
-        pygame.time.delay(trial.interval_delay)
         counter += 1
+
         if trial.stimulus_type == "VIS":
-            draw_square(SCREEN_WIDTH / 2 + SQUARE_DISTANCE_FROM_CENTER_PIXEL, 
+            if trial.stimuli_delay == 0: 
+                draw_square(SCREEN_WIDTH / 2 + SQUARE_DISTANCE_FROM_CENTER_PIXEL, 
+                                        SCREEN_HEIGHT / 2 - SQUARE_HALF_HEIGHT_PIXEL,
+                                        SQUARE_COLOR)
+                draw_square(SCREEN_WIDTH / 2 - (SQUARE_DISTANCE_FROM_CENTER_PIXEL + SQUARE_WIDTH_PIXEL), 
                         SCREEN_HEIGHT / 2 - SQUARE_HALF_HEIGHT_PIXEL,
                         SQUARE_COLOR)
-            pygame.display.flip()
-            right_stimuli_time = time.time()
-
-            if trial.coordination != "INPHASE": 
-                pygame.time.delay(trial.stimulus_duration)
+                pygame.display.flip()
+                
+                right_stimuli_time = time.time()
+                left_stimuli_time = right_stimuli_time
+                pygame.time.delay(40)
                 screen.fill(BG_COLOR)
                 pygame.display.flip()
 
-            pygame.time.delay(trial.stimuli_delay-trial.stimulus_duration)
-
-            draw_square(SCREEN_WIDTH / 2 - (SQUARE_DISTANCE_FROM_CENTER_PIXEL + SQUARE_WIDTH_PIXEL), 
+            else:
+                r_display_time = time.time()
+                draw_square(SCREEN_WIDTH / 2 + SQUARE_DISTANCE_FROM_CENTER_PIXEL, 
+                                        SCREEN_HEIGHT / 2 - SQUARE_HALF_HEIGHT_PIXEL,
+                                        SQUARE_COLOR)
+                pygame.display.flip()
+                right_stimuli_time = time.time()
+                screen.fill(BG_COLOR)
+                draw_square(SCREEN_WIDTH / 2 - (SQUARE_DISTANCE_FROM_CENTER_PIXEL + SQUARE_WIDTH_PIXEL), 
                         SCREEN_HEIGHT / 2 - SQUARE_HALF_HEIGHT_PIXEL,
                         SQUARE_COLOR)
-            pygame.display.flip()
-            left_stimuli_time = time.time()
-
-            pygame.time.delay(trial.stimulus_duration)
-
+                pygame.time.delay(trial.stimuli_delay - int((right_stimuli_time - r_display_time)*1000))
+                pygame.display.flip()
+                left_stimuli_time = time.time()
         elif trial.stimulus_type == "AUD":
-            play_sound(RIGHT_HAND_SOUND_NAME)
-            right_stimuli_time = time.time()
-
-            pygame.time.delay(trial.stimuli_delay)
-
-            play_sound(LEFT_HAND_SOUND_NAME)
-            left_stimuli_time = time.time()
-
+            if trial.stimuli_delay == 0:
+                play_sound(RIGHT_HAND_SOUND_NAME)
+                play_sound(LEFT_HAND_SOUND_NAME)
+                right_stimuli_time = time.time()
+                left_stimuli_time = right_stimuli_time
+            else:
+                r_display_time = time.time()
+                play_sound(RIGHT_HAND_SOUND_NAME)
+                right_stimuli_time = time.time()
+                pygame.time.delay(trial.stimuli_delay - int((right_stimuli_time - r_display_time)*1000))
+                play_sound(LEFT_HAND_SOUND_NAME)
+                left_stimuli_time = time.time()
         trial.timestamp.append(TimeStamp("Display Right Stimulus",right_stimuli_time))
         trial.timestamp.append(TimeStamp("Display Left Stimulus",left_stimuli_time))
         trial.right_stimuli_times.append((right_stimuli_time))
         trial.left_stimuli_times.append((left_stimuli_time))
+        pygame.time.delay(trial.stimuli_display_duration - int((time.time() - dispaly_start_time)*1000))
 
     screen.fill(BG_COLOR)
     pygame.display.flip()
-    pygame.time.delay(trial.interval_delay)
     text = get_bidi_text(messages[LANGUAGE]["stop"])
     draw_text(text, font, (0, 0, 0), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
     pygame.display.flip()
@@ -269,7 +293,7 @@ def wait_for_input(trial: Trial, start_time:float):
 
     with keyboard.Listener(on_press=on_press) as listener:
         while not input_finished.is_set():
-            if (time.time() - start_time >= trial.max_duration) or trial.stop:
+            if (time.time() - start_time >= trial.block_duration + 1) or trial.stop:
                 input_finished.set()
                 break
     
@@ -292,19 +316,34 @@ def run_trial(trial: Trial):
     return trial
 # Function to run the main program
 def main(save, data_path, test):
-    
+    block_counter = {"INPHASE-VIS":0, 
+                     "ANTI-VIS":0,
+                     "INTER-VIS":0,
+                     "INPHASE-AUD":0, 
+                     "ANTI-AUD":0,
+                     "INTER-AUD":0}
     while True:
         exit = show_instructions()
         if not exit:
             coordination = get_coordination(test)
             if coordination == "Exit":
                 break
-            stimulus_type = get_stimulus_type(test)
+            stimulus_type = get_stimulus_type(test, 
+                                              block_counter[f"{coordination}-VIS"],
+                                              block_counter[f"{coordination}-AUD"])
             if stimulus_type == "Exit":
                 break
+            if block_counter[f"{coordination}-{stimulus_type}"] < NUMBER_OF_BLOCKS:
+                block_counter[f"{coordination}-{stimulus_type}"] += 1
+            else: continue
             trial = Trial(coordination = coordination,
                         stimulus_type = stimulus_type,
-                        stimuli_delay=STIMULI_DELAY[coordination])
+                        stimuli_delay = STIMULI_DELAY[coordination],
+                        stimuli_display_duration = STIMULI_DISPLAY_DURATION,
+                        stimuli_repetition_in_block = STIMULI_REPETITION_IN_BLOCK,
+                        number_of_blocks = NUMBER_OF_BLOCKS,
+                        block_number= block_counter[f"{coordination}-{stimulus_type}"],
+                        block_duration = BLOCK_DURATION)
             trial.stop = False
 
             try:
@@ -338,6 +377,9 @@ def create_folder_if_not_exists(folder_name):
         os.makedirs(folder_path)
 
     return folder_path
+
+
+    
 # Run the program
 if __name__ == "__main__":
     args = parse_arguments()
